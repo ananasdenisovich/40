@@ -880,7 +880,32 @@ func main() {
 		ConcurrentUserRegistration(numUsers, numgoroutines)
 		c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Registered %d users concurrently", numUsers)})
 	})
+	r.POST("/register-sequential", func(c *gin.Context) {
+		start := time.Now()
+		numUsers := 15
 
+		for i := 0; i < numUsers; i++ {
+			user := User{
+				Name:         getRandomName(),
+				Email:        getRandomEmail(),
+				Password:     getRandomPassword(),
+				Roles:        []string{"user"},
+				Confirmed:    false,
+				ConfirmToken: "",
+			}
+
+			err := RegisterUser(user)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Error registering user %d", i+1)})
+				return
+			}
+
+			fmt.Printf("User registered: %s\n", user.Email)
+		}
+
+		elapsed := time.Since(start)
+		c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Registered %d users sequentially in %v", numUsers, elapsed)})
+	})
 	r.Static("/static", "./static/")
 	r.StaticFS("/auth", http.Dir("auth"))
 	r.StaticFile("/", "index.html")
@@ -1057,6 +1082,36 @@ func RegisterUser(user User) error {
 
 	return nil
 }
+
+func SequentialUserRegistration(numUsers int) time.Duration {
+	startTime := time.Now()
+
+	for i := 0; i < numUsers; i++ {
+		user := User{
+			Name:         getRandomName(),
+			Email:        getRandomEmail(),
+			Password:     getRandomPassword(),
+			Roles:        []string{"user"},
+			Confirmed:    false,
+			ConfirmToken: "",
+		}
+
+		err := RegisterUser(user)
+		if err != nil {
+			log.Printf("Error registering user: %v\n", err)
+			continue
+		}
+
+		log.Printf("User registered and email sent: %s\n", user.Email)
+	}
+
+	endTime := time.Now()
+
+	duration := endTime.Sub(startTime)
+	fmt.Printf("Time taken to register 40 users with no goroutines: %s\n", duration)
+	return duration
+}
+
 func ConcurrentUserRegistration(numUsers int, numGoroutines int) {
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
