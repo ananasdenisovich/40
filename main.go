@@ -875,8 +875,9 @@ func main() {
 	r.GET("/profile", AuthMiddleware("user"), userProfileHandler)
 	r.POST("/update", AuthMiddleware("user"), updateUserHandler)
 	r.POST("/register-users", func(c *gin.Context) {
-		numUsers := 100
-		ConcurrentUserRegistration(numUsers)
+		numUsers := 40
+		numgoroutines := 40
+		ConcurrentUserRegistration(numUsers, numgoroutines)
 		c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Registered %d users concurrently", numUsers)})
 	})
 
@@ -1056,31 +1057,38 @@ func RegisterUser(user User) error {
 
 	return nil
 }
-func ConcurrentUserRegistration(numUsers int) {
+func ConcurrentUserRegistration(numUsers int, numGoroutines int) {
 	var wg sync.WaitGroup
-	wg.Add(numUsers)
+	wg.Add(numGoroutines)
 
-	for i := 0; i < numUsers; i++ {
-		go func() {
+	usersPerGoroutine := numUsers / numGoroutines
+
+	for i := 0; i < numGoroutines; i++ {
+		start := i * usersPerGoroutine
+		end := start + usersPerGoroutine
+
+		go func(start, end int) {
 			defer wg.Done()
 
-			user := User{
-				Name:         getRandomName(),
-				Email:        getRandomEmail(),
-				Password:     getRandomPassword(),
-				Roles:        []string{"user"},
-				Confirmed:    false,
-				ConfirmToken: "",
-			}
+			for j := start; j < end; j++ {
+				user := User{
+					Name:         getRandomName(),
+					Email:        getRandomEmail(),
+					Password:     getRandomPassword(),
+					Roles:        []string{"user"},
+					Confirmed:    false,
+					ConfirmToken: "",
+				}
 
-			err := RegisterUser(user)
-			if err != nil {
-				log.Printf("Error registering user: %v\n", err)
-				return
-			}
+				err := RegisterUser(user)
+				if err != nil {
+					log.Printf("Error registering user: %v\n", err)
+					continue
+				}
 
-			log.Printf("User registered and email sent: %s\n", user.Email)
-		}()
+				log.Printf("User registered and email sent: %s\n", user.Email)
+			}
+		}(start, end)
 	}
 
 	wg.Wait()
