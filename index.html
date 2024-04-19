@@ -46,7 +46,7 @@
     <button class="button" onclick="location.href='auth/register.html'">Register</button>
     <button class="button" onclick="location.href='auth/furniture.html'">Furniture</button>
     <button onclick="registerUsers()">Register Users</button>
-
+    <button onclick="registerSequentialUsers()">Register Users 2</button>
 
     <h2>Place an Order</h2>
     <form id="orderForm">
@@ -160,11 +160,11 @@
         function registerUsers() {
     const numUsers = 10; // Number of users to register concurrently
     fetch('http://localhost:8080/register-users', {
-        method: 'POST', // Use POST method for creating new resources
+        method: 'POST', 
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ numUsers: numUsers }) // Send the number of users to register
+        body: JSON.stringify({ numUsers: numUsers }) 
     })
     .then(response => response.json())
     .then(data => {
@@ -174,7 +174,18 @@
         console.error('Error registering users:', error);
     });
 }
-
+function registerSequentialUsers() {
+            fetch('http://localhost:8080/register-sequential', {
+                method: 'POST'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch(error => {
+                    console.error('Error registering users:', error);
+                });
+        }
     </script>
 </body>
 
