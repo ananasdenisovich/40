@@ -875,8 +875,8 @@ func main() {
 	r.GET("/profile", AuthMiddleware("user"), userProfileHandler)
 	r.POST("/update", AuthMiddleware("user"), updateUserHandler)
 	r.POST("/register-users", func(c *gin.Context) {
-		numUsers := 40
-		numgoroutines := 40
+		numUsers := 15
+		numgoroutines := 15
 		ConcurrentUserRegistration(numUsers, numgoroutines)
 		c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Registered %d users concurrently", numUsers)})
 	})
@@ -1063,6 +1063,8 @@ func ConcurrentUserRegistration(numUsers int, numGoroutines int) {
 
 	usersPerGoroutine := numUsers / numGoroutines
 
+	startTime := time.Now()
+
 	for i := 0; i < numGoroutines; i++ {
 		start := i * usersPerGoroutine
 		end := start + usersPerGoroutine
@@ -1092,6 +1094,9 @@ func ConcurrentUserRegistration(numUsers int, numGoroutines int) {
 	}
 
 	wg.Wait()
+	endTime := time.Now()
+	duration := endTime.Sub(startTime)
+	fmt.Printf("Time taken to register 40 users with ", numGoroutines, " goroutines: %s\n", duration)
 }
 
 func getRandomName() string {
